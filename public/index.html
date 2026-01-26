@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Word Grid - Multiplayer Boggle</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Multiplayer Boggle with 370K uncensored words. Play with friends!">
+  <meta name="theme-color" content="#f5576c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Word Grid">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    h1 {
+      margin: 0 0 5px 0;
+      font-size: 1.8rem;
+      background: linear-gradient(90deg, #f093fb, #f5576c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 15px;
+    }
+    
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .screen.active {
+      display: flex;
+    }
+    
+    .input-group {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    
+    .input-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 5px;
+    }
+    
+    .input-group input, .input-group select {
+      width: 100%;
+      padding: 15px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      text-align: center;
+    }
+    
+    .input-group input::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+    
+    .input-group input.room-code {
+      font-size: 1.5rem;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+    }
+    
+    .room-code-display {
+      font-size: 3rem;
+      font-weight: bold;
+      letter-spacing: 10px;
+      background: linear-gradient(90deg, #f093fb, #f5576c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 20px 0;
+    }
+    
+    .grid-size-display {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 15px;
+    }
+    
+    .grid-size-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .grid-size-btn {
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .grid-size-btn.active {
+      border-color: #f5576c;
+      background: rgba(245, 87, 108, 0.2);
+    }
+    
+    .grid-size-btn:hover {
+      border-color: rgba(245, 87, 108, 0.5);
+    }
+    
+    .players-list {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    
+    .players-list h3 {
+      margin: 0 0 10px 0;
+      font-size: 0.85rem;
+      color: #888;
+      text-transform: uppercase;
+    }
+    
+    .player-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    
+    .player-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .player-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    
+    .player-name {
+      flex: 1;
+    }
+    
+    .host-badge {
+      font-size: 0.75rem;
+      background: rgba(245, 87, 108, 0.3);
+      padding: 3px 8px;
+      border-radius: 10px;
+      color: #f5576c;
+    }
+    
+    .or-divider {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: 20px 0;
+      color: #888;
+    }
+    
+    .or-divider::before,
+    .or-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .or-divider span {
+      padding: 0 15px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 25px;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+    
+    .stat {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #f5576c;
+    }
+    
+    .stat-label {
+      font-size: 0.7rem;
+      color: #888;
+      text-transform: uppercase;
+    }
+    
+    .current-word {
+      height: 45px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      letter-spacing: 3px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      min-width: 200px;
+    }
+    
+    .current-word.valid {
+      color: #4ade80;
+    }
+    
+    .current-word.invalid {
+      color: #f87171;
+    }
+    
+    .grid-container {
+      position: relative;
+      touch-action: none;
+    }
+    
+    .grid {
+      display: grid;
+      gap: 6px;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    
+    .grid.size-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid.size-5 { grid-template-columns: repeat(5, 1fr); }
+    .grid.size-6 { grid-template-columns: repeat(6, 1fr); }
+    
+    .cell {
+      width: var(--cell-size, 65px);
+      height: var(--cell-size, 65px);
+      background: linear-gradient(145deg, #2a2a4a, #1a1a2e);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--cell-font, 1.8rem);
+      font-weight: bold;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 2px solid transparent;
+    }
+    
+    .cell.selected {
+      background: linear-gradient(145deg, #f093fb, #f5576c);
+      transform: scale(1.05);
+      border-color: #fff;
+      box-shadow: 0 0 15px rgba(245, 87, 108, 0.5);
+    }
+    
+    .cell.path {
+      background: linear-gradient(145deg, #a855f7, #7c3aed);
+    }
+    
+    svg.lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    svg.lines line {
+      stroke: rgba(245, 87, 108, 0.6);
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+    
+    .found-words {
+      margin-top: 15px;
+      max-width: 380px;
+      width: 100%;
+    }
+    
+    .found-words h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.85rem;
+      color: #888;
+      text-transform: uppercase;
+    }
+    
+    .words-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    
+    .word-tag {
+      background: rgba(255,255,255,0.1);
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.85rem;
+    }
+    
+    .word-tag.long {
+      background: linear-gradient(90deg, rgba(240,147,251,0.3), rgba(245,87,108,0.3));
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    button {
+      padding: 12px 30px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(90deg, #f093fb, #f5576c);
+      color: #fff;
+    }
+    
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    
+    .btn-small {
+      padding: 8px 20px;
+      font-size: 0.9rem;
+    }
+
+    .results-container {
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .result-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .result-card.winner {
+      background: linear-gradient(135deg, rgba(240,147,251,0.2), rgba(245,87,108,0.2));
+      border: 2px solid rgba(245, 87, 108, 0.5);
+    }
+    
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .result-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    
+    .result-score {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #f5576c;
+    }
+    
+    .result-words {
+      font-size: 0.85rem;
+      color: #888;
+    }
+    
+    .result-words span {
+      color: #4ade80;
+    }
+    
+    .message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      padding: 20px 40px;
+      border-radius: 15px;
+      font-size: 1.2rem;
+      z-index: 100;
+      animation: fadeOut 1.5s forwards;
+    }
+    
+    @keyframes fadeOut {
+      0%, 70% { opacity: 1; }
+      100% { opacity: 0; pointer-events: none; }
+    }
+    
+    .error {
+      color: #f87171;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+    
+    .connecting {
+      color: #fbbf24;
+      font-size: 0.9rem;
+    }
+    
+    @media (max-width: 420px) {
+      body { padding: 15px; }
+      .grid { gap: 5px; padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Word Grid</h1>
+  <p class="subtitle">Multiplayer • Uncensored • 370K Words</p>
+  
+  <!-- Menu Screen -->
+  <div class="screen active" id="menu-screen">
+    <div class="input-group">
+      <label>Your Name</label>
+      <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+    </div>
+    
+    <div class="input-group">
+      <label>Grid Size</label>
+      <div class="grid-size-selector" id="menu-grid-selector">
+        <button class="grid-size-btn active" data-size="4">4×4</button>
+        <button class="grid-size-btn" data-size="5">5×5</button>
+        <button class="grid-size-btn" data-size="6">6×6</button>
+      </div>
+    </div>
+    
+    <button class="btn-primary" id="create-room-btn">Create Room</button>
+    
+    <div class="or-divider"><span>or</span></div>
+    
+    <div class="input-group">
+      <label>Room Code</label>
+      <input type="text" id="room-code-input" class="room-code" placeholder="XXXX" maxlength="4">
+    </div>
+    
+    <button class="btn-secondary" id="join-room-btn">Join Room</button>
+    
+    <div class="or-divider"><span>or</span></div>
+    
+    <button class="btn-secondary" id="solo-btn">Play Solo</button>
+    
+    <div class="error" id="menu-error"></div>
+  </div>
+  
+  <!-- Lobby Screen -->
+  <div class="screen" id="lobby-screen">
+    <p style="color: #888; margin: 0;">Room Code</p>
+    <div class="room-code-display" id="room-code-display">XXXX</div>
+    <div class="grid-size-display" id="lobby-grid-size">4×4 Grid</div>
+    
+    <div class="grid-size-selector" id="lobby-grid-selector" style="display: none;">
+      <button class="grid-size-btn active" data-size="4">4×4</button>
+      <button class="grid-size-btn" data-size="5">5×5</button>
+      <button class="grid-size-btn" data-size="6">6×6</button>
+    </div>
+    
+    <div class="players-list">
+      <h3>Players</h3>
+      <div id="players-container"></div>
+    </div>
+    
+    <button class="btn-primary" id="start-game-btn" disabled>Start Game</button>
+    <button class="btn-secondary btn-small" id="leave-room-btn" style="margin-top: 10px;">Leave Room</button>
+  </div>
+  
+  <!-- Game Screen -->
+  <div class="screen" id="game-screen">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="score">0</div>
+        <div class="stat-label">Score</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="timer">3:00</div>
+        <div class="stat-label">Time</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="words-count">0</div>
+        <div class="stat-label">Words</div>
+      </div>
+    </div>
+    
+    <div class="current-word" id="current-word">&nbsp;</div>
+    
+    <div class="grid-container" id="grid-container">
+      <div class="grid" id="grid"></div>
+      <svg class="lines" id="lines"></svg>
+    </div>
+    
+    <div class="found-words">
+      <h3>Your Words</h3>
+      <div class="words-list" id="words-list"></div>
+    </div>
+  </div>
+  
+  <!-- Results Screen -->
+  <div class="screen" id="results-screen">
+    <h2 style="margin-bottom: 20px;">🏆 Results</h2>
+    <div class="results-container" id="results-container"></div>
+    <div class="buttons">
+      <button class="btn-primary" id="new-round-btn">New Round</button>
+      <button class="btn-secondary" id="back-menu-btn">Main Menu</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import PartySocket from "https://esm.sh/partysocket@1";
+    
+    // Config - will be set after deploy
+    const PARTYKIT_HOST = window.location.hostname === 'localhost' 
+      ? 'localhost:1999' 
+      : 'word-grid.lelandsequel.partykit.dev';
+    
+    let socket = null;
+    let isHost = false;
+    let isSolo = false;
+    let currentRoom = null;
+    let gridSize = 4;
+    let grid = [];
+    let selectedCells = [];
+    let foundWords = new Set();
+    let localScore = 0;
+    let isSelecting = false;
+    let soloTimer = null;
+    let soloTimeLeft = 180;
+    let dictionary = new Set();
+    
+    const SCORES = { 3: 1, 4: 1, 5: 2, 6: 3, 7: 5, 8: 11 };
+    
+    const DICE_4X4 = [
+      'AAEEGN', 'ABBJOO', 'ACHOPS', 'AFFKPS',
+      'AOOTTW', 'CIMOTU', 'DEILRX', 'DELRVY',
+      'DISTTY', 'EEGHNW', 'EEINSU', 'EHRTVW',
+      'EIOSST', 'ELRTTY', 'HIMNQU', 'HLNNRZ'
+    ];
+    
+    const DICE_5X5 = [
+      'AAAFRS', 'AAEEEE', 'AAFIRS', 'ADENNN', 'AEEEEM',
+      'AEEGMU', 'AEGMNN', 'AFIRSY', 'BJKQXZ', 'CCNSTW',
+      'CEIILT', 'CEILPT', 'CEIPST', 'DDLNOR', 'DHHLOR',
+      'DHHNOT', 'DHLNOR', 'EIIITT', 'EMOTTT', 'ENSSSU',
+      'FIPRSY', 'GORRVW', 'HIPRRY', 'NOOTUW', 'OOOTTU'
+    ];
+    
+    const DICE_6X6 = [
+      'AAAFRS', 'AAEEEE', 'AAFIRS', 'ADENNN', 'AEEEEM',
+      'AEEGMU', 'AEGMNN', 'AFIRSY', 'BJKQXZ', 'CCENST',
+      'CCNSTW', 'CEIILT', 'CEILPT', 'CEIPST', 'DDHNOT',
+      'DDLNOR', 'DHHLOR', 'DHLNOR', 'DHLNOR', 'EIIITT',
+      'EMOTTT', 'ENSSSU', 'ENSSSU', 'FIPRSY', 'GORRVW',
+      'GORRVW', 'HIPRRY', 'HIPRRY', 'NOOTUW', 'NOOTUW',
+      'OOOTTU', 'OOOTTU', 'AEILMN', 'AEINRT', 'ERSTWY',
+      'DKNOTU'
+    ];
+    
+    const DICE_SETS = { 4: DICE_4X4, 5: DICE_5X5, 6: DICE_6X6 };
+    
+    // Load dictionary
+    async function loadDictionary() {
+      try {
+        const response = await fetch('/words.txt');
+        const text = await response.text();
+        const words = text.split(/\r?\n/).map(w => w.trim().toUpperCase()).filter(w => w.length >= 3);
+        dictionary = new Set(words);
+        console.log(`Dictionary loaded: ${dictionary.size} words`);
+      } catch (e) {
+        console.error('Failed to load dictionary:', e);
+      }
+    }
+    
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 4; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
+    }
+    
+    function connectToRoom(roomId, playerName) {
+      socket = new PartySocket({
+        host: PARTYKIT_HOST,
+        room: roomId,
+      });
+      
+      socket.onopen = () => {
+        socket.send(JSON.stringify({
+          type: 'join',
+          name: playerName,
+          gridSize: gridSize
+        }));
+      };
+      
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleMessage(data);
+      };
+      
+      socket.onclose = () => {
+        console.log('Disconnected');
+      };
+    }
+    
+    function handleMessage(data) {
+      switch (data.type) {
+        case 'joined':
+          isHost = data.isHost;
+          gridSize = data.gridSize || 4;
+          currentRoom = data.roomId;
+          document.getElementById('room-code-display').textContent = currentRoom;
+          document.getElementById('lobby-grid-size').textContent = `${gridSize}×${gridSize} Grid`;
+          document.getElementById('lobby-grid-selector').style.display = isHost ? 'flex' : 'none';
+          setGridSizeUI('lobby-grid-selector', gridSize);
+          updateStartButton();
+          showScreen('lobby-screen');
+          break;
+          
+        case 'players-updated':
+          renderPlayers(data.players);
+          if (data.gridSize) {
+            gridSize = data.gridSize;
+            document.getElementById('lobby-grid-size').textContent = `${gridSize}×${gridSize} Grid`;
+          }
+          break;
+          
+        case 'grid-size-changed':
+          gridSize = data.gridSize;
+          document.getElementById('lobby-grid-size').textContent = `${gridSize}×${gridSize} Grid`;
+          setGridSizeUI('lobby-grid-selector', gridSize);
+          break;
+          
+        case 'game-started':
+          grid = data.grid;
+          gridSize = data.gridSize || 4;
+          foundWords.clear();
+          localScore = 0;
+          document.getElementById('score').textContent = '0';
+          document.getElementById('words-count').textContent = '0';
+          document.getElementById('words-list').innerHTML = '';
+          renderGrid();
+          updateTimerDisplay(data.timeLeft);
+          showScreen('game-screen');
+          break;
+          
+        case 'time-update':
+          updateTimerDisplay(data.timeLeft);
+          break;
+          
+        case 'word-result':
+          // Handled inline
+          break;
+          
+        case 'game-ended':
+          showResults(data.results);
+          break;
+          
+        case 'round-reset':
+          showScreen('lobby-screen');
+          break;
+      }
+    }
+    
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+    
+    function showMessage(text) {
+      const msg = document.createElement('div');
+      msg.className = 'message';
+      msg.textContent = text;
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 1500);
+    }
+    
+    function showError(msg) {
+      document.getElementById('menu-error').textContent = msg;
+    }
+    
+    function setupGridSizeSelector(containerId, onChange) {
+      const container = document.getElementById(containerId);
+      container.querySelectorAll('.grid-size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.grid-size-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const size = parseInt(btn.dataset.size);
+          if (onChange) onChange(size);
+        });
+      });
+    }
+    
+    function setGridSizeUI(containerId, size) {
+      const container = document.getElementById(containerId);
+      container.querySelectorAll('.grid-size-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.size) === size);
+      });
+    }
+    
+    setupGridSizeSelector('menu-grid-selector', (size) => {
+      gridSize = size;
+    });
+    
+    setupGridSizeSelector('lobby-grid-selector', (size) => {
+      if (socket && isHost) {
+        socket.send(JSON.stringify({ type: 'set-grid-size', size }));
+        gridSize = size;
+        document.getElementById('lobby-grid-size').textContent = `${size}×${size} Grid`;
+      }
+    });
+    
+    // Menu handlers
+    document.getElementById('create-room-btn').addEventListener('click', () => {
+      const name = document.getElementById('player-name').value.trim() || 'Host';
+      const roomId = generateRoomCode();
+      isSolo = false;
+      connectToRoom(roomId, name);
+    });
+    
+    document.getElementById('join-room-btn').addEventListener('click', () => {
+      const name = document.getElementById('player-name').value.trim() || 'Player';
+      const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+      
+      if (code.length !== 4) {
+        showError('Enter a 4-letter room code');
+        return;
+      }
+      
+      isSolo = false;
+      connectToRoom(code, name);
+    });
+    
+    document.getElementById('solo-btn').addEventListener('click', async () => {
+      isSolo = true;
+      await loadDictionary();
+      startSoloGame();
+    });
+    
+    document.getElementById('leave-room-btn').addEventListener('click', () => {
+      if (socket) socket.close();
+      location.reload();
+    });
+    
+    document.getElementById('start-game-btn').addEventListener('click', () => {
+      if (socket && isHost) {
+        socket.send(JSON.stringify({ type: 'start-game' }));
+      }
+    });
+    
+    document.getElementById('new-round-btn').addEventListener('click', () => {
+      if (isSolo) {
+        startSoloGame();
+      } else if (socket && isHost) {
+        socket.send(JSON.stringify({ type: 'new-round' }));
+      }
+    });
+    
+    document.getElementById('back-menu-btn').addEventListener('click', () => {
+      if (socket) socket.close();
+      location.reload();
+    });
+    
+    function renderPlayers(players) {
+      const container = document.getElementById('players-container');
+      container.innerHTML = '';
+      
+      players.forEach(player => {
+        const div = document.createElement('div');
+        div.className = 'player-item';
+        div.innerHTML = `
+          <div class="player-avatar">${player.name[0].toUpperCase()}</div>
+          <div class="player-name">${player.name}</div>
+          ${player.isHost ? '<span class="host-badge">HOST</span>' : ''}
+        `;
+        container.appendChild(div);
+      });
+      
+      updateStartButton();
+    }
+    
+    function updateStartButton() {
+      const btn = document.getElementById('start-game-btn');
+      btn.disabled = !isHost;
+      btn.textContent = isHost ? 'Start Game' : 'Waiting for host...';
+    }
+    
+    // Solo mode
+    function startSoloGame() {
+      grid = generateSoloGrid();
+      foundWords.clear();
+      localScore = 0;
+      soloTimeLeft = 180;
+      
+      document.getElementById('score').textContent = '0';
+      document.getElementById('words-count').textContent = '0';
+      document.getElementById('words-list').innerHTML = '';
+      
+      renderGrid();
+      updateTimerDisplay(soloTimeLeft);
+      showScreen('game-screen');
+      
+      if (soloTimer) clearInterval(soloTimer);
+      soloTimer = setInterval(() => {
+        soloTimeLeft--;
+        updateTimerDisplay(soloTimeLeft);
+        if (soloTimeLeft <= 0) {
+          clearInterval(soloTimer);
+          showSoloResults();
+        }
+      }, 1000);
+    }
+    
+    function generateSoloGrid() {
+      const dice = DICE_SETS[gridSize] || DICE_4X4;
+      const needed = gridSize * gridSize;
+      
+      let allDice = [...dice];
+      while (allDice.length < needed) {
+        allDice = allDice.concat(dice);
+      }
+      
+      const shuffled = allDice.slice(0, needed).sort(() => Math.random() - 0.5);
+      return shuffled.map(die => {
+        const letter = die[Math.floor(Math.random() * 6)];
+        return letter === 'Q' ? 'Qu' : letter;
+      });
+    }
+    
+    function showSoloResults() {
+      const results = [{
+        name: 'You',
+        score: localScore,
+        uniqueWords: Array.from(foundWords).map(w => ({ word: w, points: SCORES[Math.min(w.length, 8)] || 11 })),
+        sharedWords: [],
+        totalWords: foundWords.size
+      }];
+      showResults(results);
+    }
+    
+    // Game
+    function updateTimerDisplay(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      document.getElementById('timer').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function getCellSize() {
+      const maxWidth = Math.min(window.innerWidth - 50, 380);
+      const gap = 6;
+      const padding = 24;
+      const available = maxWidth - padding - (gap * (gridSize - 1));
+      return Math.floor(available / gridSize);
+    }
+    
+    function renderGrid() {
+      const gridEl = document.getElementById('grid');
+      gridEl.innerHTML = '';
+      gridEl.className = `grid size-${gridSize}`;
+      
+      const cellSize = getCellSize();
+      const fontSize = gridSize === 4 ? '1.8rem' : gridSize === 5 ? '1.5rem' : '1.2rem';
+      
+      gridEl.style.setProperty('--cell-size', `${cellSize}px`);
+      gridEl.style.setProperty('--cell-font', fontSize);
+      
+      grid.forEach((letter, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.textContent = letter;
+        cell.dataset.index = i;
+        gridEl.appendChild(cell);
+      });
+      
+      updateLines();
+    }
+    
+    function getCellCenter(index) {
+      const cell = document.querySelector(`.cell[data-index="${index}"]`);
+      if (!cell) return { x: 0, y: 0 };
+      const container = document.getElementById('grid-container');
+      const containerRect = container.getBoundingClientRect();
+      const cellRect = cell.getBoundingClientRect();
+      
+      return {
+        x: cellRect.left - containerRect.left + cellRect.width / 2,
+        y: cellRect.top - containerRect.top + cellRect.height / 2
+      };
+    }
+    
+    function updateLines() {
+      const svg = document.getElementById('lines');
+      svg.innerHTML = '';
+      
+      for (let i = 1; i < selectedCells.length; i++) {
+        const from = getCellCenter(selectedCells[i - 1]);
+        const to = getCellCenter(selectedCells[i]);
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', from.x);
+        line.setAttribute('y1', from.y);
+        line.setAttribute('x2', to.x);
+        line.setAttribute('y2', to.y);
+        svg.appendChild(line);
+      }
+    }
+    
+    function isAdjacent(i1, i2) {
+      const row1 = Math.floor(i1 / gridSize), col1 = i1 % gridSize;
+      const row2 = Math.floor(i2 / gridSize), col2 = i2 % gridSize;
+      return Math.abs(row1 - row2) <= 1 && Math.abs(col1 - col2) <= 1 && i1 !== i2;
+    }
+    
+    function getCurrentWord() {
+      return selectedCells.map(i => grid[i]).join('').toUpperCase();
+    }
+    
+    function updateCurrentWord() {
+      const wordEl = document.getElementById('current-word');
+      const word = getCurrentWord();
+      wordEl.textContent = word || '\u00A0';
+      
+      wordEl.classList.remove('valid', 'invalid');
+      if (word.length >= 3) {
+        if (dictionary.has(word) && !foundWords.has(word)) {
+          wordEl.classList.add('valid');
+        } else if (foundWords.has(word)) {
+          wordEl.classList.add('invalid');
+        }
+      }
+    }
+    
+    function updateSelection() {
+      document.querySelectorAll('.cell').forEach((cell, i) => {
+        cell.classList.remove('selected', 'path');
+        if (selectedCells.includes(i)) {
+          cell.classList.add(i === selectedCells[selectedCells.length - 1] ? 'selected' : 'path');
+        }
+      });
+      updateLines();
+      updateCurrentWord();
+    }
+    
+    function handleCellEnter(index) {
+      if (!isSelecting) return;
+      
+      if (selectedCells.length >= 2 && selectedCells[selectedCells.length - 2] === index) {
+        selectedCells.pop();
+        updateSelection();
+        return;
+      }
+      
+      if (selectedCells.includes(index)) return;
+      if (selectedCells.length > 0 && !isAdjacent(selectedCells[selectedCells.length - 1], index)) return;
+      
+      selectedCells.push(index);
+      updateSelection();
+    }
+    
+    function handleSelectionEnd() {
+      if (!isSelecting) return;
+      isSelecting = false;
+      
+      const word = getCurrentWord();
+      
+      if (word.length >= 3 && dictionary.has(word) && !foundWords.has(word)) {
+        foundWords.add(word);
+        const points = SCORES[Math.min(word.length, 8)] || 11;
+        localScore += points;
+        
+        document.getElementById('score').textContent = localScore;
+        document.getElementById('words-count').textContent = foundWords.size;
+        addWordTag(word);
+        
+        // Send to server if multiplayer
+        if (socket && !isSolo) {
+          socket.send(JSON.stringify({ type: 'submit-word', word }));
+        }
+      }
+      
+      selectedCells = [];
+      updateSelection();
+    }
+    
+    function addWordTag(word) {
+      const wordsList = document.getElementById('words-list');
+      const tag = document.createElement('span');
+      tag.className = 'word-tag' + (word.length >= 6 ? ' long' : '');
+      tag.textContent = word.toLowerCase();
+      wordsList.insertBefore(tag, wordsList.firstChild);
+    }
+    
+    function getCellFromPoint(x, y) {
+      const cells = document.querySelectorAll('.cell');
+      for (const cell of cells) {
+        const rect = cell.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          return parseInt(cell.dataset.index);
+        }
+      }
+      return null;
+    }
+    
+    // Mouse events
+    document.getElementById('grid').addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('cell')) {
+        isSelecting = true;
+        selectedCells = [parseInt(e.target.dataset.index)];
+        updateSelection();
+      }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      const index = getCellFromPoint(e.clientX, e.clientY);
+      if (index !== null) handleCellEnter(index);
+    });
+    
+    document.addEventListener('mouseup', handleSelectionEnd);
+    
+    // Touch events
+    document.getElementById('grid').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const index = getCellFromPoint(touch.clientX, touch.clientY);
+      if (index !== null) {
+        isSelecting = true;
+        selectedCells = [index];
+        updateSelection();
+      }
+    }, { passive: false });
+    
+    document.addEventListener('touchmove', (e) => {
+      if (!isSelecting) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const index = getCellFromPoint(touch.clientX, touch.clientY);
+      if (index !== null) handleCellEnter(index);
+    }, { passive: false });
+    
+    document.addEventListener('touchend', handleSelectionEnd);
+    
+    // Results
+    function showResults(results) {
+      const container = document.getElementById('results-container');
+      container.innerHTML = '';
+      
+      results.forEach((player, i) => {
+        const card = document.createElement('div');
+        card.className = 'result-card' + (i === 0 ? ' winner' : '');
+        
+        const uniqueWordsText = player.uniqueWords.map(w => w.word.toLowerCase()).join(', ') || 'none';
+        const sharedWordsText = player.sharedWords?.map(w => w.toLowerCase()).join(', ') || '';
+        
+        card.innerHTML = `
+          <div class="result-header">
+            <span class="result-name">${i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : ''}${player.name}</span>
+            <span class="result-score">${player.score} pts</span>
+          </div>
+          <div class="result-words">
+            <strong>Unique:</strong> <span>${uniqueWordsText}</span>
+          </div>
+          ${sharedWordsText ? `<div class="result-words" style="margin-top: 5px;">
+            <strong>Shared:</strong> ${sharedWordsText}
+          </div>` : ''}
+        `;
+        container.appendChild(card);
+      });
+      
+      document.getElementById('new-round-btn').style.display = (isSolo || isHost) ? 'block' : 'none';
+      showScreen('results-screen');
+    }
+    
+    // Load dictionary on start
+    loadDictionary();
+    
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('SW registered'))
+        .catch(err => console.log('SW registration failed:', err));
+    }
+  </script>
+</body>
+</html>
