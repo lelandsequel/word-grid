@@ -721,6 +721,13 @@
         case 'round-reset':
           showScreen('lobby-screen');
           break;
+          
+        case 'host-changed':
+          isHost = data.isHost;
+          document.getElementById('lobby-grid-selector').style.display = 'flex';
+          setGridSizeUI('lobby-grid-selector', gridSize);
+          updateStartButton();
+          break;
       }
     }
     

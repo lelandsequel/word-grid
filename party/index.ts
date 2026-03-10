@@ -289,8 +289,13 @@ export default class WordGridParty implements Party.Server {
       this.game.state = 'waiting';
       this.game.host = null;
     } else if (conn.id === this.game.host) {
-      // Transfer host
-      this.game.host = this.game.players.keys().next().value;
+      // Transfer host to next player
+      this.game.host = this.game.players.keys().next().value ?? null;
+      // Notify new host so their UI updates
+      if (this.game.host) {
+        const newHostConn = this.room.getConnection(this.game.host);
+        newHostConn?.send(JSON.stringify({ type: 'host-changed', isHost: true }));
+      }
     }
     
     this.broadcastPlayers();
